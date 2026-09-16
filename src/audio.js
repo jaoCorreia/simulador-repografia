@@ -6,6 +6,7 @@ const SOUNDS = {
   break: { file: 'ceramic-break', volume: .42, cooldown: .075, voices: 2 },
   pick: { file: 'object-pick', volume: .60, cooldown: .045, voices: 2 },
   throw: { file: 'object-throw', volume: .22, cooldown: .06, voices: 2 },
+  pour: { file: 'coffee-pour', volume: .40, cooldown: 1.05, voices: 1 },
   sip: { file: 'coffee-sip', volume: .3, cooldown: .15, voices: 1 },
   write: { file: 'pencil-write', volume: .29, cooldown: .12, voices: 1 },
   erase: { file: 'eraser', volume: .29, cooldown: .12, voices: 1 },

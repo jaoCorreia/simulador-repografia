@@ -21,19 +21,23 @@ npm run preview # Prévia do build em http://127.0.0.1:4180
 
 ## Lobby: a mesa é sua
 
-Entre na firma antes de bater o ponto. Os nove objetos da mesa podem ser selecionados pela cena ou pela lista **Objetos da firma**: grampeador, papéis, caneca com pires, porta-lápis, bloco, lápis, borracha, carimbo e bandeja.
+Entre na firma antes de bater o ponto. Os dez objetos da mesa podem ser selecionados pela cena ou pela lista **Objetos da firma**: grampeador, papéis, caneca, pires, porta-lápis, bloco, lápis, borracha, carimbo e bandeja.
 
-- **Clique e arraste:** selecione e reorganize os objetos sobre a mesa.
-- **Q / E** ou roda do mouse: gire o objeto selecionado.
-- **F:** pegue para examinar de perto; aperte novamente para devolver.
-- **G:** arremesse. O objeto quebra ao atingir a mesa ou o chão.
-- **X:** quebre o objeto em fragmentos com física.
+- **Segure o clique esquerdo e arraste:** levante o objeto e mova-o livremente no espaço. Soltar o clique deixa o objeto cair onde está.
+- **F:** segure sem manter o botão pressionado; mova o mouse para carregar. F ou um clique solta o objeto.
+- **Roda do mouse:** aproxime ou afaste o objeto segurado.
+- **Botão direito + arraste:** gire o objeto em qualquer direção.
+- **Q / E:** gire; **R / T:** incline; **Z / C:** vire de lado. Segure as teclas para continuar o movimento. Também há botões de inclinação na tela.
+- **G:** arremesse com força. Impactos fortes podem quebrar os objetos frágeis; uma queda pequena permite apoiar o objeto sem destruí-lo.
+- **X:** quebre o objeto em fragmentos.
 - **Enter / Espaço:** use o objeto (beber café, escrever, apagar, carimbar, trocar recado ou organizar papéis).
-- **Esc:** devolva e solte a seleção.
+- **Esc:** solte o objeto e feche a seleção.
 
-**Arrumar a mesa** restaura todos os objetos e suas posições. Para iniciar o expediente, clique no **relógio de ponto fixado na parede**, abaixo da placa da repografia. O cartão entra, recebe o carimbo e sai; depois da confirmação, os desafios começam e a mesa é restaurada automaticamente. Também é possível selecionar o relógio em **Objetos da firma** e pressionar Enter. Usar o grampeador no lobby apenas testa o mecanismo. Pegar, reorganizar, lançar e quebrar são permitidos somente no lobby. Durante os pedidos, cliques e teclas voltam aos controles do grampeador.
+A caneca sai do pires separadamente. Incline-a para derramar: a superfície do café oscila, o líquido escorre, a quantidade diminui e poças ficam sobre a mesa ou no chão. O indicador mostra quanto café resta. Os objetos mantêm o tamanho, acompanham a mão com inércia e caem com gravidade.
 
-A caneca tem parede interna, café rebaixado, alça aberta e estampa que acompanha sua curvatura. As mãos são translúcidas e aparecem só enquanto você aperta o grampeador; não aparecem no lobby.
+**Arrumar a mesa** restaura os objetos, limpa o café derramado e enche a caneca. Para iniciar o expediente, clique no **relógio de ponto fixado na parede**, abaixo da placa da repografia. O cartão entra, recebe o carimbo e sai; depois da confirmação, os desafios começam e a mesa é restaurada automaticamente. Também é possível selecionar o relógio em **Objetos da firma** e pressionar Enter. Usar o grampeador no lobby apenas testa o mecanismo. Movimentar, derramar, lançar e quebrar são permitidos somente no lobby. Durante os pedidos, cliques e teclas voltam aos controles do grampeador.
+
+A caneca tem parede interna, café rebaixado, alça aberta e estampa que acompanha sua curvatura. As mãos são translúcidas e aparecem enquanto você aperta o grampeador.
 
 ## Como jogar os pedidos
 
@@ -54,15 +58,26 @@ O turno completo soma **682 folhas**. A câmera fica na bancada, na posição do
 - `src/time-clock.js`: relógio de ponto da parede, cartão, alavanca e registro de entrada.
 - `src/lobby.js`: seleção, movimento, ações, arremesso, quebra e restauração dos objetos.
 - `src/lobby-ui.js` e `src/lobby.css`: interface e controles do lobby.
-- `src/mug.js`: modelo de cerâmica, café, estampa curva e pires.
+- `src/mug.js`: modelo de cerâmica, estampa curva e pires.
+- `src/coffee.js`: volume, inclinação do líquido, derramamento e poças.
 - `src/hands.js`: mãos translúcidas com dedos articulados, visíveis durante os apertos.
 - `src/game.js`: regras e máquina de estados, independentes da interface.
-- `src/main.js`: controles, interface, áudio sintetizado e recorde local.
+- `src/main.js`: controles, interface e recorde local.
+- `src/audio.js`: reprodução e mixagem dos arquivos locais da ElevenLabs.
 - `src/style.css`: interface e adaptação de telas menores.
 - `tests/game.test.js`: testes de progressão e casos de erro.
 - `tests/lobby.test.js`: limites da mesa, bloqueio fora do lobby, escala, colisão e restauração.
 
-Os modelos, texturas e sons são gerados pelo código. As fontes são distribuídas junto ao build. O jogo não usa API, conta de usuário ou assets remotos em tempo de execução. É necessário um navegador com WebGL e aceleração gráfica.
+Os modelos e texturas são gerados pelo código; os efeitos de áudio foram gerados com ElevenLabs e são distribuídos junto do jogo. As fontes são distribuídas junto ao build. O jogo não usa API, conta de usuário ou assets remotos em tempo de execução. É necessário um navegador com WebGL e aceleração gráfica.
+
+## Deploy
+
+O jogo é um site estático: `npm run build` gera `dist/` e nenhum servidor de aplicação é necessário. O `Dockerfile` na raiz monta o build e serve o resultado com nginx na porta definida por `PORT`, o que permite publicar no Railway (ou em qualquer host de containers) sem configuração adicional.
+
+```sh
+docker build -t simulador-repografia .
+docker run --rm -p 8080:8080 simulador-repografia
+```
 
 ## Áudios do jogo
 

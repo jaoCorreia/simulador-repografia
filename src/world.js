@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { createLobby } from './lobby.js';
 import { createMug } from './mug.js';
+import { createCoffee } from './coffee.js';
 import { createHands } from './hands.js';
 import { createTimeClock } from './time-clock.js';
 
@@ -223,6 +224,10 @@ export function createWorld(canvas) {
 
   const mug = createMug({ mat, canvasTexture });
   mug.position.set(4.6, -.05, -.72); scene.add(mug);
+  const saucer = mug.getObjectByName('saucer');
+  scene.updateMatrixWorld(true);
+  scene.attach(saucer);
+  const coffee = createCoffee({ scene, cup: mug.getObjectByName('cup'), mat });
 
   const pencilPot = new THREE.Group(); pencilPot.position.set(4.38, 0, -2.62); scene.add(pencilPot);
   cylinder(.34, .28, .71, M.greenDark, 0, .36, 0, pencilPot);
@@ -285,8 +290,12 @@ export function createWorld(canvas) {
   for (let i = 0; i <= 70; i++) { const a = i / 70 * TAU * 6; springCurve.push(new THREE.Vector3(Math.sin(a) * .075, Math.cos(a) * .075 + .035, .13 + i / 70 * .53)); }
   mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(springCurve), 100, .012, 5, false), M.steel, arm);
 
-  // A single changing bundle, with enough separated edges to read as many sheets.
-  const paperStack = new THREE.Group(); paperStack.position.set(0, .19, 2.16); hero.add(paperStack);
+  // Keep a visible section of the bundle inside the stapler's mouth. The stack
+  // remains on the base while its front half extends toward the player.
+  const PAPER_HOME_Y = .19;
+  const PAPER_HOME_Z = 1.58;
+  const STAPLE_PLATE_Z = .86;
+  const paperStack = new THREE.Group(); paperStack.position.set(0, PAPER_HOME_Y, PAPER_HOME_Z); hero.add(paperStack);
   const paperSheets = [];
   for (let i = 0; i < 24; i++) {
     const sheet = box(2.97, .018, 3.76, i % 5 === 0 ? M.paperEdge : M.paper, 0, 0, 0, paperStack, .009);
@@ -304,7 +313,7 @@ export function createWorld(canvas) {
   });
   const printedPage = mesh(new THREE.PlaneGeometry(2.93, 3.72), mat('#fff', { map: printedPageTexture, roughness: .93 }), paperStack, 0, .45, 0, false);
   printedPage.rotation.x = -Math.PI / 2;
-  const staple = new THREE.Group(); paperStack.add(staple); staple.position.set(0, .5, -1.26);
+  const staple = new THREE.Group(); paperStack.add(staple); staple.position.set(0, .5, STAPLE_PLATE_Z - PAPER_HOME_Z);
   rod([-.2, 0, 0], [.2, 0, 0], .018, M.steel, staple);
   rod([-.2, 0, 0], [-.2, -.075, 0], .018, M.steel, staple);
   rod([.2, 0, 0], [.2, -.075, 0], .018, M.steel, staple);
@@ -349,6 +358,7 @@ export function createWorld(canvas) {
     camera.updateProjectionMatrix();
   }
   function update(dt, visual = {}) {
+    const fluidDt = Math.max(0, Number.isFinite(dt) ? dt : 0);
     dt = Math.min(Number.isFinite(dt) ? dt : .016, .06);
     time = visual.elapsed ?? time + dt;
     const phase = visual.phase || 'menu';
@@ -376,7 +386,7 @@ export function createWorld(canvas) {
     const alignment = phase === 'align' ? smoothAlignment : smoothAlignment * .2;
     if (!inLobby) {
       hero.updateMatrixWorld(true);
-      paperLocalPosition.set(alignment * .22, .19, 2.16);
+      paperLocalPosition.set(alignment * .22, PAPER_HOME_Y, PAPER_HOME_Z);
       paperStack.position.copy(hero.localToWorld(paperLocalPosition));
       paperLocalQuaternion.setFromEuler(paperLocalRotation.set(0, alignment * .07, 0));
       paperStack.quaternion.copy(hero.quaternion).multiply(paperLocalQuaternion);
@@ -400,6 +410,8 @@ export function createWorld(canvas) {
     handsRig.position.copy(hero.position); handsRig.quaternion.copy(hero.quaternion);
     hands.update(dt, { ...visual, phase: inLobby ? 'lobby' : phase, angle, bundleHeight, alignment, elapsed: time });
     lobby?.update(dt);
+    const mugStatus = lobby?.getItems().find(item => item.id === 'mug');
+    coffee.update(fluidDt, { enabled: inLobby && !visual.paused, broken: !!mugStatus?.broken, held: !!mugStatus?.held });
     timeClock.update(dt);
     dust.rotation.y = time * .012;
     dust.position.y = Math.sin(time * .23) * .12;
@@ -408,6 +420,7 @@ export function createWorld(canvas) {
   function dispose() {
     lobby?.dispose();
     hands.dispose();
+    coffee.dispose();
     const geometries = new Set();
     scene.traverse(object => { if (object.geometry) geometries.add(object.geometry); });
     for (const geometry of geometries) geometry.dispose();
@@ -423,10 +436,10 @@ export function createWorld(canvas) {
     { id: 'papers', name: 'Pilha de papéis', description: 'Relatórios esperando um grampo. Experimente embaralhar as folhas.', actionLabel: 'Embaralhar', object: paperStack, action: 'shuffle', message: 'As folhas estão embaralhadas. Ninguém vai perceber.', onUse() {
       paperSheets.forEach((sheet, i) => { sheet.rotation.y = Math.sin(i * 2.3 + time) * .045; });
     } },
-    { id: 'mug', name: 'Caneca de café', description: 'Cerâmica esmaltada, café quente e um pires para apoiar.', actionLabel: 'Tomar café', object: mug, actionObject: mug.getObjectByName('cup'), action: 'sip', message: 'Uma pausa para o café. Agora sim!', onUse() {
-      const coffee = mug.getObjectByName('coffee');
-      if (coffee) coffee.position.y = Math.max(coffee.userData.emptyHeight ?? .27, coffee.position.y - .075);
-    } },
+    { id: 'mug', name: 'Caneca de café', description: 'Pegue e incline a caneca para derramar o café. O pires fica na mesa.', actionLabel: 'Tomar café', object: mug, actionObject: mug.getObjectByName('cup'), action: 'sip', fragile: true, breakThreshold: 6, mass: .45,
+      getStatus() { const status = coffee.getState(); return { liquidFill: Math.round(status.fill * 100), spilling: status.spilling }; },
+      onUse() { return coffee.sip(); }, onReset() { coffee.reset(); } },
+    { id: 'saucer', name: 'Pires de cerâmica', description: 'Um apoio para a caneca. Cuidado: a cerâmica pode quebrar numa queda forte.', actionLabel: 'Examinar pires', object: saucer, action: 'inspect', fragile: true, breakThreshold: 6, mass: .22, message: 'Um pires de cerâmica esmaltada, companheiro da caneca.' },
     { id: 'pencils', name: 'Porta-lápis', description: 'Lápis e canetas prontos para mais um expediente.', actionLabel: 'Chacoalhar', object: pencilPot, action: 'rattle', message: 'Tem uma caneta boa aí no meio. Provavelmente.' },
     { id: 'sticky', name: 'Bloco de lembretes', description: 'Troque o recado ou use o lápis para desenhar nele.', actionLabel: 'Próximo recado', object: sticky, action: 'note', message: 'Lembrete atualizado.', onUse() { noteIndex = (noteIndex + 1) % notes.length; redrawNote(); }, onReset() { noteIndex = 0; scribbled = false; redrawNote(); } },
     { id: 'pencil', name: 'Lápis', description: 'Um lápis para dar personalidade aos lembretes.', actionLabel: 'Rabiscar lembrete', object: pencil, action: 'write', message: 'Um sorriso no bloco para alegrar o expediente.', onUse() {
@@ -444,5 +457,5 @@ export function createWorld(canvas) {
       return accepted ? { action: 'clock-in', duration: 1.7, message: 'Registrando entrada…' } : { action: 'feedback', message: 'Aguarde o registro.' };
     }, onReset() { timeClock.reset(); } },
   ] });
-  return { update, resize, dispose, lobby };
+  return { update, resize, dispose, lobby, coffee };
 }

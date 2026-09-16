@@ -205,6 +205,18 @@
       "bytes": 129193,
       "generatedAt": "2026-09-16T19:16:52.647Z",
       "characterCost": "80"
+    },
+    "coffee-pour": {
+      "file": "coffee-pour.mp3",
+      "prompt": "A small ceramic mug tilted and spilling coffee onto a wooden desktop: a gentle continuous thin liquid trickle, several clear soft splatters forming a little puddle, a few ending drops. Cozy close-up liquid Foley, no cup impact, no voices, no music, no background. Immediate start.",
+      "seconds": 1.4,
+      "loop": false,
+      "model": "eleven_text_to_sound_v2",
+      "settingsHash": "9ef6628573b63297a84b10ba5b492b025189c12e59c0f79479369d6dc3d66d50",
+      "sha256": "8bd25a83a1298f8f266135b29a6dd072b3b16a65272af311176863f5d7f3c424",
+      "bytes": 23031,
+      "generatedAt": "2026-09-16T19:26:07.417Z",
+      "characterCost": "14"
     }
   }
 }

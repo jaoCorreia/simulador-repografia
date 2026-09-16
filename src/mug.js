@@ -10,7 +10,6 @@ export function createMug({ mat, canvasTexture }) {
   mug.add(cup);
   const terracotta = mat('#b96545', { roughness: .29, metalness: 0 });
   const cream = mat('#f1dfbf', { roughness: .25, metalness: 0 });
-  const coffeeMaterial = mat('#261209', { roughness: .16, metalness: .03 });
 
   function add(geometry, material, name, parent = cup) {
     const object = new THREE.Mesh(geometry, material);
@@ -54,19 +53,11 @@ export function createMug({ mat, canvasTexture }) {
   }
   add(bodyGeometry, [terracotta, cream], 'cup-body');
 
-  // The drink sits well below the rim; the visible cream inner wall establishes depth.
+  // Dynamic liquid is supplied by createCoffee; this anchor stays in cup coordinates.
   const coffee = new THREE.Group();
   coffee.name = 'coffee';
-  coffee.position.y = .755;
   coffee.userData = { kind: 'liquid', fullHeight: .755, emptyHeight: .175 };
   cup.add(coffee);
-  const coffeeSurface = add(new THREE.CircleGeometry(.346, 80), coffeeMaterial, 'coffee-surface', coffee);
-  coffeeSurface.rotation.x = -Math.PI / 2;
-  coffeeSurface.castShadow = false;
-  // A small meniscus rises into the wall instead of leaving a bright circular gap.
-  const meniscus = [new THREE.Vector2(.332, -.001), new THREE.Vector2(.340, -.001), new THREE.Vector2(.346, .003), new THREE.Vector2(.347, .008)];
-  const coffeeEdge = add(new THREE.LatheGeometry(meniscus, 80), coffeeMaterial, 'coffee-meniscus', coffee);
-  coffeeEdge.castShadow = false;
 
   // An open C, ending inside the OUTER ceramic skin at two attachment pads.
   // Its endpoints never cross the inner wall or create a ring through the drink.
